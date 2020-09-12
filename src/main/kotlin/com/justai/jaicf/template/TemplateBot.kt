@@ -10,7 +10,12 @@ import com.justai.jaicf.context.manager.mongo.MongoBotContextManager
 import com.justai.jaicf.template.scenario.MainScenario
 import com.mongodb.MongoClient
 import com.mongodb.MongoClientURI
-import java.util.*
+import java.util.Properties
+
+private fun jaicpProperty(key: String) = Properties().run {
+    load(CailaNLUSettings::class.java.getResourceAsStream("/jaicp.properties"))
+    getProperty(key)
+}
 
 private val contextManager = System.getenv("MONGODB_URI")?.let { url ->
     val uri = MongoClientURI(url)
@@ -18,14 +23,13 @@ private val contextManager = System.getenv("MONGODB_URI")?.let { url ->
     MongoBotContextManager(client.getDatabase(uri.database!!).getCollection("contexts"))
 } ?: InMemoryBotContextManager
 
-val accessToken: String = System.getenv("JAICP_API_TOKEN") ?: Properties().run {
-    load(CailaNLUSettings::class.java.getResourceAsStream("/jaicp.properties"))
-    getProperty("apiToken")
-}
+val accessToken: String = System.getenv("JAICP_API_TOKEN") ?: jaicpProperty("apiToken")
+val gsheetId: String = System.getenv("GSHEET_ID") ?: jaicpProperty("gsheetId")
 
 private val cailaNLUSettings = CailaNLUSettings(
     accessToken = accessToken,
-    confidenceThreshold = 0.2
+    confidenceThreshold = 0.2,
+    cailaUrl = "https://jaicf01-demo-htz.lab.just-ai.com/cailapub/api/caila/p"
 )
 
 val templateBot = BotEngine(
@@ -37,4 +41,3 @@ val templateBot = BotEngine(
         CatchAllActivator
     )
 )
-
